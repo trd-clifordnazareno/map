@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tinago to Colon Road</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+
+<div id="map" style="height: 600px;"></div>
+<div id="distance" style="margin-top: 10px; font-weight: bold;"></div>
+
+<script>
+    var map = L.map('map').setView([10.2957, 123.8961], 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    var markerPoints = [
+        { address: 'Tinago, Cebu City' },
+        { address: 'emall, Cebu City' }
+    ];
+
+    var markers = [];
+
+    // Add markers using Nominatim geocoding
+    var geocodePromises = markerPoints.map(point =>
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(point.address)}`)
+            .then(response => response.json())
+    );
+
+    Promise.all(geocodePromises)
+        .then(results => {
+            markers = results.map((result, index) => {
+                var coordinates = [parseFloat(result[0].lat), parseFloat(result[0].lon)];
+                var marker = L.marker(coordinates, { draggable: true }).addTo(map).bindPopup(markerPoints[index].address);
+
+                // Add dragend event listener to update route when marker is dragged
+                marker.on('dragend', function () {
+                    updateRoute();
+                });
+
+                return marker;
+            });
+
+            // Initial route calculation
+            updateRoute();
+
+            // Add a dot at the user's location
+            map.locate({ setView: true, maxZoom: 16 });
+            map.on('locationfound', function (e) {
+                var userMarker = L.marker(e.latlng, { icon: L.divIcon({ className: 'dot' }) }).addTo(map);
+            });
+        });
+
+    var route;
+
+    function updateRoute() {
+        var updatedCoordinates = markers.map(marker => marker.getLatLng());
+        var coordinatesString = updatedCoordinates.map(coord => `${coord.lng},${coord.lat}`).join(';');
+
+        // Use OSRM API to obtain a route
+        var osrmUrl = 'https://router.project-osrm.org/route/v1/driving/';
+        var routeUrl = `${osrmUrl}${coordinatesString}?geometries=geojson`;
+
+        fetch(routeUrl)
+            .then(response => response.json())
+            .then(data => {
+                // Clear existing route
+                if (route) {
+                    map.removeLayer(route);
+                }
+
+                // Draw the new route
+                route = L.geoJSON(data.routes[0].geometry, {
+                    color: 'red',
+                    weight: 5
+                }).addTo(map);
+                map.fitBounds(route.getBounds());
+            });
+
+        updateDistance();
+    }
+
+    function updateDistance() {
+        // Calculate and display the distance
+        var distance = markers[0].getLatLng().distanceTo(markers[1].getLatLng()); // in meters
+
+        // Update the distance element
+        document.getElementById('distance').innerHTML = `Distance: ${distance.toFixed(2)} meters`;
+
+        // Clear existing route
+        if (route) {
+            map.removeLayer(route);
+        }
+
+        // Create a red Polyline between the two points
+        route = L.polyline([markers[0].getLatLng(), markers[1].getLatLng()], { color: 'red', weight: 5 }).addTo(map);
+    }
+</script>
+
+<style>
+    .dot {
+        background-color: #3388ff;
+        border-radius: 50%;
+        height: 10px;
+        width: 10px;
+    }
+</style>
+
+</body>
+</html>
