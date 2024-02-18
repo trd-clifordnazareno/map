@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tinago to Colon Road</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+
+<div id="map" style="height: 600px;"></div>
+<div id="distance" style="margin-top: 10px; font-weight: bold;"></div>
+<div id="deliveryfee" style="margin-top: 10px; font-weight: bold;"></div>
+<div class="styleorder" style="margin-top: 10px; font-weight: bold;">Order: vacuum meduim 9 pcs</div>
+<div class="styleorder" style="margin-top: 10px; font-weight: bold;">Note: deliver vacuum storage naa sa lobby</div>
+<div class="styleorder" style="margin-top: 10px; font-weight: bold;">Name: ade</div>
+<div class="styleorder" style="margin-top: 10px; font-weight: bold;">Phone Number: 091234567890</div>
+<div class="styleorder" style="margin-top: 10px; font-weight: bold;">Delivery Date: Today</div>
+<div style="position: absolute; top: 10px; left: 10px; z-index: 1000; margin-left: 50px;">
+    <input type="text" id="search-box" placeholder="Search in Cebu City" oninput="updateSearchResults()" style="font-size: 16px; padding: 8px;">
+    <div id="search-results"></div>
+    <button onclick="performSearch()" style="font-size: 16px; padding: 8px;">Search</button>
+</div>
+
+<script>
+    var map = L.map('map').setView([10.2957, 123.8961], 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    var markerPoints = [
+        { address: 'Tinago, Cebu City' },
+        { address: 'emall, Cebu City' },
+        { lat: 10.29756, lon: 123.89695, title: 'New Point' } // New point added
+    ];
+
+    var markers = [];
+    var routeLayer;
+
+    // Update user's location every 5 seconds
+    setInterval(function () {
+        map.locate({ setView: false, maxZoom: 16 });
+    }, 60000);
+
+    // Initial locate to set user's location
+    map.locate({ setView: true, maxZoom: 16 });
+    <!-- Add the following code inside your script tag -->
+
+map.on('locationfound', function (e) {
+    var userLatLng = e.latlng;
+
+
+    checkNearbyJollibee(userLatLng);
+
+    // Check if the second marker exists
+    if (markers.length >= 2) {
+        // Update position of the second marker
+        markers[1].setLatLng(userLatLng);
+
+        // Update icon for the second marker on each location update
+        markers[1].setIcon(createCustomIcon());
+    } else {
+        // Add a new marker if the second marker doesn't exist
+        var markerIcon = createCustomIcon(); // Use custom icon for the first marker
+        var marker = L.marker(userLatLng, { draggable: true, icon: markerIcon }).addTo(map).bindPopup("Your Location");
+
+        marker.on('dragend', function () {
+            updateRoute();
+        });
+
+        markers.push(marker);
+    }
+
+    // UpdateRoute only when both markers exist
+    if (markers.length >= 2) {
+        updateRoute();
+    }
+});
+
+
+    loadDefaultMarker();
+
+    // Function to get the user's current location
+function getUserLocation() {
+    return new Promise((resolve, reject) => {
+        if ('geolocation' in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                position => {
+                    const userLatLng = L.latLng(position.coords.latitude, position.coords.longitude);
+                    resolve(userLatLng);
+                },
+                error => {
+                    reject(error.message);
+                }
+            );
+        } else {
+            reject('Geolocation is not supported by your browser.');
+        }
+    });
+}
+
+// Function to check nearby Jollibee locations around the user's location
+// Function to check nearby Jollibee locations around the user's location
+async function checkNearbyJollibee() {
+    try {
+        const userLatLng = await getUserLocation();
+
+        // Define a larger bounding box covering Cebu City, Mandaue, and Talisay
+        const boundingBox = `${userLatLng.lng - 0.02},${userLatLng.lat - 0.02},${userLatLng.lng + 0.02},${userLatLng.lat + 0.02}`;
+
+        const osmApiUrl = `https://nominatim.openstreetmap.org/search?format=json&q=Jollibee&viewbox=${boundingBox}&bounded=1`;
+
+        const response = await fetch(osmApiUrl);
+
+        if (response.status === 429) {
+            throw new Error('API rate limit exceeded. Please try again later.');
+        }
+
+        const results = await response.json();
+
+        if (results && results.length > 0) {
+            // Log and display Jollibee locations nearby
+            console.log('Jollibee locations nearby:', results);
+
+            results.forEach(jollibee => {
+                const jollibeeLatLng = L.latLng(parseFloat(jollibee.lat), parseFloat(jollibee.lon));
+
+                // Calculate distance between user location and Jollibee location in meters
+                const distance = userLatLng.distanceTo(jollibeeLatLng);
+
+                if (distance <= 10000000) { // Check if the distance is within 100 meters
+                    // Add a circle to the map representing each Jollibee location
+                    L.circle(jollibeeLatLng, {
+                        color: 'blue',
+                        fillColor: 'blue',
+                        fillOpacity: 0.5,
+                        radius: 100
+                    }).addTo(map);
+
+                    // Log information to the console
+                    console.log('Jollibee Name:', jollibee.display_name);
+                    console.log('Jollibee Address:', jollibee.address);
+                    console.log('Jollibee Coordinates:', jollibee.lat, jollibee.lon);
+                    console.log('Distance to Jollibee:', distance.toFixed(2), 'meters');
+                    console.log('------------------------');
+                }
+            });
+        } else {
+            // No Jollibee found nearby
+            console.log('No Jollibee found nearby');
+        }
+    } catch (error) {
+        console.error('Error getting user location or checking nearby Jollibee:', error);
+    }
+}
+
+// Call the function to check nearby Jollibee locations around the user's location
+checkNearbyJollibee();
+
+
+
+
+    
+    
+    function loadDefaultMarker() {
+        if (markerPoints.length > 0) {
+            var defaultMarker = markerPoints[0];
+            var defaultCoordinates;
+
+            if (defaultMarker.address) {
+                defaultCoordinates = [10.27666,123.86156];
+            } else if (defaultMarker.lat && defaultMarker.lon) {
+                defaultCoordinates = [defaultMarker.lat, defaultMarker.lon];
+            }
+
+            // Add a marker with a custom icon at the default coordinates
+            var defaultIcon = createDefaultIcon();
+            var defaultMarkerObject = L.marker(defaultCoordinates, { icon: defaultIcon }).addTo(map);
+
+            if (defaultMarker.title) {
+                defaultMarkerObject.bindPopup(defaultMarker.title);
+            }
+
+            markers.push(defaultMarkerObject);
+
+            map.on('locationfound', function (e) {
+                var userLatLng = e.latlng;
+
+                var osrmApiUrl = `https://router.project-osrm.org/route/v1/driving/${defaultCoordinates[1]},${defaultCoordinates[0]};${userLatLng.lng},${userLatLng.lat}?geometries=geojson`;
+
+                fetch(osrmApiUrl)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (routeLayer) {
+                            map.removeLayer(routeLayer);
+                        }
+
+                        routeLayer = L.geoJSON(data.routes[0].geometry, {
+                            color: 'red',
+                            weight: 5
+                        }).addTo(map);
+
+                        updateDistance();
+                    })
+                    .catch(error => {
+                        console.error('Error fetching route:', error);
+                    });
+            });
+
+            updateRoute();
+            updateDistance();
+        }
+    }
+
+    function createDefaultIcon() {
+        return L.icon({
+            iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png',
+            iconSize: [30, 30],
+            iconAnchor: [20, 40],
+            popupAnchor: [0, -40],
+        });
+    }
+
+    function createCustomIcon() {
+        return L.divIcon({
+            className: 'custom-dot',
+            iconSize: [30, 30],
+            iconAnchor: [20, 40],
+            popupAnchor: [0, -40],
+        });
+    }
+
+    function updateSearchResults() {
+        var searchTerm = document.getElementById('search-box').value;
+        var searchResultsContainer = document.getElementById('search-results');
+
+        if (searchTerm) {
+            var osmApiUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)},Cebu,Philippines&addressdetails=1`;
+
+            fetch(osmApiUrl)
+                .then(response => {
+                    if (response.status === 429) {
+                        throw new Error('API rate limit exceeded. Please try again later.');
+                    }
+                    return response.json();
+                })
+                .then(results => {
+                    if (results && results.length > 0) {
+                        var resultsHTML = results.map(result => {
+                            var street = result.address?.road || result.address?.suburb || result.address?.city;
+                            return `<div class="search-result" onclick="selectSearchResult('${street}')">${street}</div>`;
+                        }).join('');
+                        searchResultsContainer.innerHTML = resultsHTML;
+                    } else {
+                        searchResultsContainer.innerHTML = `<div class="search-result no-result">No results found for '${searchTerm}'</div>`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error during search:', error);
+                    searchResultsContainer.innerHTML = `<div class="search-result error">${error.message}</div>`;
+                });
+        } else {
+            searchResultsContainer.innerHTML = '';
+        }
+    }
+
+    function selectSearchResult(selectedStreet) {
+        var searchBox = document.getElementById('search-box');
+        if (selectedStreet && selectedStreet !== 'undefined') {
+            searchBox.value = selectedStreet;
+        }
+        document.getElementById('search-results').innerHTML = '';
+    }
+
+    function performSearch() {
+        var searchTerm = document.getElementById('search-box').value;
+        if (searchTerm) {
+            var userConsent = confirm("By clicking 'OK', you consent to the use of OpenStreetMap's search API to find locations. Your data may be processed in accordance with OpenStreetMap's policies.");
+
+            if (userConsent) {
+                var osmApiUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchTerm)},Cebu,Philippines&addressdetails=1`;
+
+                fetch(osmApiUrl)
+                    .then(response => {
+                        if (response.status === 429) {
+                            throw new Error('API rate limit exceeded. Please try again later.');
+                        }
+                        return response.json();
+                    })
+                    .then(results => {
+                        if (results && results.length > 0) {
+                            var result = results[0];
+                            var street = result.address?.road || result.address?.suburb || result.address?.city;
+                            var coordinates = [parseFloat(result.lat), parseFloat(result.lon)];
+
+                            // Check if the second marker exists
+                            if (markers.length >= 2) {
+                                // Update position of the second marker
+                                markers[1].setLatLng(coordinates);
+
+                                // Update icon for the second marker on each search
+                                markers[1].setIcon(createCustomIcon());
+                            } else {
+                                // Add a new marker if the second marker doesn't exist
+                                var markerIcon = createCustomIcon(); // Use custom icon for the first marker
+                                var marker = L.marker(coordinates, { draggable: true, icon: markerIcon }).addTo(map).bindPopup(searchTerm);
+
+                                marker.on('dragend', function () {
+                                    updateRoute();
+                                });
+
+                                markers.push(marker);
+                            }
+
+                            // UpdateRoute only when both markers exist
+                            if (markers.length >= 2) {
+                                updateRoute();
+                            }
+                        } else {
+                            alert(`Location not found for ${searchTerm} in Cebu City.`);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during search:', error);
+                        alert(`An error occurred during the search for '${searchTerm}'. ${error.message}`);
+                    });
+            } else {
+                alert("Search canceled. Please provide consent to use the search feature.");
+            }
+        } else {
+            alert('Please enter a search term.');
+        }
+    }
+
+    function updateRoute() {
+        var updatedCoordinates = markers.map(marker => marker.getLatLng());
+        var coordinatesString = updatedCoordinates.map(coord => `${coord.lng},${coord.lat}`).join(';');
+
+        var osrmApiUrl = 'https://router.project-osrm.org/route/v1/driving/';
+        var routeUrl = `${osrmApiUrl}${coordinatesString}?geometries=geojson`;
+
+        fetch(routeUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (routeLayer) {
+                    map.removeLayer(routeLayer);
+                }
+
+                routeLayer = L.geoJSON(data.routes[0].geometry, {
+                    color: 'red',
+                    weight: 5
+                }).addTo(map);
+                map.fitBounds(routeLayer.getBounds());
+            });
+
+        updateDistance();
+    }
+
+    function updateDistance() {
+        var distance = markers.reduce((acc, marker, index) => {
+            if (index < markers.length - 1) {
+                acc += marker.getLatLng().distanceTo(markers[index + 1].getLatLng());
+            }
+            return acc;
+        }, 0);
+
+        document.getElementById('distance').innerHTML = `Distance: ${distance.toFixed(2)} meters`;
+        var df = distance.toFixed(2) / 72;
+        if (df < 50) {
+            df = df + df;
+        } else {
+            var dfee = df / 2;
+            var delfee = dfee / 2;
+            df = dfee + delfee;
+        }
+        document.getElementById('deliveryfee').innerHTML = `Delivery Fee: ${df} Pesos`;
+    }
+
+
+    function createDefaultIcon() {
+    return L.icon({
+        iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png',
+        iconSize: [30, 30],
+        iconAnchor: [15, 30], // Adjust anchor based on icon size
+        popupAnchor: [0, -30], // Adjust popup anchor based on icon size
+    });
+}
+
+
+function createBlueMarkerIcon() {
+    return L.icon({
+        iconUrl: 'https://leafletjs.com/examples/custom-icons/marker-icon-2x-blue.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+    });
+}
+
+
+
+
+</script>
+
+<style>
+    .dot {
+        background-color: #3388ff;
+        border-radius: 50%;
+        height: 10px;
+        width: 10px;
+    }
+
+    .search-result {
+        padding: 5px;
+        cursor: pointer;
+        border-bottom: 1px solid #ccc;
+        background-color: #fff;
+    }
+
+    .no-result, .error {
+        background-color: #fff;
+        padding: 5px;
+        border-bottom: 1px solid #ccc;
+    }
+
+    button {
+        font-size: 16px;
+        padding: 8px;
+        margin-top: 5%;
+        font-size: larger;
+    }
+
+    .custom-dot {
+        background-color: rgb(13, 117, 3);
+        border-radius: 50%;
+        height: 40px;
+        width: 40px;
+    }
+
+    #distance {
+        margin-top: 10px;
+        font-weight: bold;
+        padding: 10px;
+        background-color: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-family: sans-serif;
+    }
+
+    #deliveryfee {
+        margin-top: 10px;
+        font-weight: bold;
+        padding: 10px;
+        background-color: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-family: sans-serif;
+    }
+
+
+    .styleorder {
+        margin-top: 10px;
+        font-weight: bold;
+        padding: 10px;
+        background-color: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-family: sans-serif;
+    }
+
+</style>
+
+</body>
+</html>
