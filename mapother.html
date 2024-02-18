@@ -161,7 +161,7 @@ async function checkNearbyJollibee() {
                 // Calculate distance between user location and Jollibee location in meters
                 const distance = userLatLng.distanceTo(jollibeeLatLng);
 
-                if (distance <= 90000000) { // Check if the distance is within 100 meters
+                if (distance <= 10000000) { // Check if the distance is within 100 meters
                     // Add a circle to the map representing each Jollibee location
                     L.circle(jollibeeLatLng, {
                         color: 'blue',
