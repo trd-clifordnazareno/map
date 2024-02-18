@@ -71,11 +71,11 @@
 
     // Update user's location every 5 seconds
     setInterval(function () {
-        map.locate({ setView: false, maxZoom: 3 });
+        map.locate({ setView: false, maxZoom: 16 });
     }, 60000);
 
     // Initial locate to set user's location
-    map.locate({ setView: true, maxZoom: 3 });
+    map.locate({ setView: true, maxZoom: 16 });
     <!-- Add the following code inside your script tag -->
 
 map.on('locationfound', function (e) {
