@@ -23,11 +23,23 @@
     <button onclick="performSearch()" style="font-size: 16px; padding: 8px;">Search</button>
 </div>
 
+
+<table>
+    <tr>
+        <th>Company</th>
+        <th>Contact</th>
+        <th>Country</th>
+      </tr>
+      <tbody id="table_res">
+
+      </tbody>
+</table>
+
 <script>
     var map = L.map('map').setView([10.2957, 123.8961], 14);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+        attribution: 'ï¿½ OpenStreetMap contributors'
     }).addTo(map);
 
     var markerPoints = [
@@ -124,6 +136,7 @@ async function checkNearbyJollibee() {
             // Log and display Jollibee locations nearby
             console.log('Jollibee locations nearby:', results);
 
+            
             results.forEach(jollibee => {
                 const jollibeeLatLng = L.latLng(parseFloat(jollibee.lat), parseFloat(jollibee.lon));
 
@@ -145,8 +158,19 @@ async function checkNearbyJollibee() {
                     console.log('Jollibee Coordinates:', jollibee.lat, jollibee.lon);
                     console.log('Distance to Jollibee:', distance.toFixed(2), 'meters');
                     console.log('------------------------');
+
+
+                     // Append a new row to the table
+        document.getElementById('table_res').innerHTML += `
+            <tr>
+                <td>${jollibee.display_name}</td>
+                <td>${jollibee.address}</td>
+                <td>${distance.toFixed(2)} meters</td>
+            </tr>`;
                 }
             });
+            // Close the table
+                
         } else {
             // No Jollibee found nearby
             console.log('No Jollibee found nearby');
