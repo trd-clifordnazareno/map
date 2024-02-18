@@ -45,8 +45,7 @@
 
 <table>
     <tr>
-        <th>Name</th>
-        <th>Address</th>
+        <th>Name Address</th>
         <th>Distance</th>
       </tr>
       <tbody id="table_res">
@@ -183,7 +182,6 @@ async function checkNearbyJollibee() {
         document.getElementById('table_res').innerHTML += `
             <tr>
                 <td>${jollibee.display_name}</td>
-                <td>${jollibee.address}</td>
                 <td>${distance.toFixed(2)} meters</td>
             </tr>`;
                 }
