@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tinago to Colon Road</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+        }
+
+        .footer {
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .footer-nav {
+            list-style-type: none;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 10px; /* Add margin to separate content from the footer */
+        }
+
+        .footer-nav li {
+            margin: 0 15px;
+        }
+
+        .footer-nav a {
+            text-decoration: none;
+            color: white;
+        }
+
+        .content {
+            flex: 1; /* Allow content to take up remaining vertical space */
+        }
+
+        @media only screen and (max-width: 600px) {
+            .footer-nav {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .footer-nav li {
+                margin: 10px 0;
+            }
+        }
+
+
+        #distance {
+        margin-top: 10px;
+        font-weight: bold;
+        padding: 10px;
+        background-color: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-family: sans-serif;
+    }
+
+    #deliveryfee {
+        margin-top: 10px;
+        font-weight: bold;
+        padding: 10px;
+        background-color: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-family: sans-serif;
+    }
+
+
+    .styleorder {
+        margin-top: 10px;
+        font-weight: bold;
+        padding: 10px;
+        background-color: #f8f8f8;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        font-family: sans-serif;
+    }
+
+
+    header {
+            background-color: #333;
+            color: white;
+            padding: 20px; /* Increased padding */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            text-align: center;
+        }
+
+        nav ul {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav li {
+            display: inline-block;
+            margin-right: 20px; /* Increased margin */
+        }
+
+        nav a {
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            transition: color 0.3s ease-in-out;
+        }
+
+        nav a:hover {
+            color: #ffd700; /* Change the color on hover */
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <nav>
+        <ul>
+            <li><a href="#home">Home</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#about">About Us</a></li>
+            <li><a href="#more">More</a></li>
+            <li><a href="#faq">FAQ</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Terms of Service</a></li>
+        </ul>
+    </nav>
+</header>
+
+<div id="map" style="height: 500px;"></div>
+<div id="distance" style="margin-top: 10px; font-weight: bold;"></div>
+<div id="deliveryfee" style="margin-top: 10px; font-weight: bold;"></div>
+<div class="styleorder" style="margin-top: 10px; font-weight: bold;">Order: vacuum meduim 9 pcs</div>
+<div class="styleorder" style="margin-top: 10px; font-weight: bold;">Note: deliver vacuum storage naa sa lobby</div>
+<div class="styleorder" style="margin-top: 10px; font-weight: bold;">Name: ade</div>
+<div class="styleorder" style="margin-top: 10px; font-weight: bold;">Phone Number: 091234567890</div>
+<div class="styleorder" style="margin-top: 10px; font-weight: bold;">Delivery Date: Today</div>
+<br>
+
+<div class="footer">
+    <ul class="footer-nav">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#about">About Us</a></li>
+        <li><a href="#more">More</a></li>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms of Service</a></li>
+    </ul>
+    <p>&copy; 2023 Your Website</p>
+</div>
+
+<script>
+    function loadMap() {
+        var map = L.map('map').setView([10.2957, 123.8961], 14);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '� OpenStreetMap contributors'
+        }).addTo(map);
+
+
+        // Parse the query string from the URL
+        var queryString = window.location.search;
+        var urlParams = new URLSearchParams(queryString);
+
+        // Get the value of a specific key
+        var keyValue = urlParams.get('areas');
+
+
+        if(keyValue === null){
+            console.log("ok");
+            return;
+        }
+
+        var markerPoints = [
+            { address: '10.276757205579996, 123.86158687396146' },
+            { address: keyValue },
+            { lat: 10.276757205579996, lon: 123.86158687396146, title: 'New Point' } // New point added
+        ];
+
+        var markers = [];
+        var circleMarker = L.circleMarker([0, 0], { color: 'white', radius: 12, weight: 3 }).addTo(map).bindPopup('New Point');
+
+        // Add markers using Nominatim geocoding
+        var geocodePromises = markerPoints.map(point =>
+            point.address
+                ? fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(point.address)}`)
+                      .then(response => response.json())
+                : Promise.resolve(point)
+        );
+
+        Promise.all(geocodePromises)
+            .then(results => {
+                markers = results.map((result, index) => {
+                    if (result.lat && result.lon) {
+                        // Coordinates are provided directly
+                        circleMarker = L.circleMarker([parseFloat(result.lat), parseFloat(result.lon)], { color: 'blue', radius: 8, weight: 7 }).addTo(map).bindPopup('New Point');
+                        return null; // No need to create a marker for direct coordinates
+                    } else {
+                        // Coordinates obtained from geocoding
+                        var coordinates = [parseFloat(result[0].lat), parseFloat(result[0].lon)];
+                        var marker = L.marker(coordinates, { draggable: true }).addTo(map).bindPopup(markerPoints[index].address);
+
+                        // Add dragend event listener to update route when marker is dragged
+                        marker.on('dragend', function () {
+                            updateRoute();
+                        });
+
+                        return marker;
+                    }
+                });
+
+                // Initial route calculation
+                updateRoute();
+                // Periodically update the white circle marker position every 1 minute
+                setInterval(updateWhiteCircle, 5000);
+            });
+
+        var route;
+
+        function updateRoute() {
+            var updatedCoordinates = markers.filter(marker => marker !== null).map(marker => marker.getLatLng());
+            var coordinatesString = updatedCoordinates.map(coord => `${coord.lng},${coord.lat}`).join(';');
+
+            // Use OSRM API to obtain a route
+            var osrmUrl = 'https://router.project-osrm.org/route/v1/driving/';
+            var routeUrl = `${osrmUrl}${coordinatesString}?geometries=geojson`;
+
+            fetch(routeUrl)
+                .then(response => response.json())
+                .then(data => {
+                    // Clear existing route
+                    if (route) {
+                        map.removeLayer(route);
+                    }
+
+                    // Draw the new route
+                    route = L.geoJSON(data.routes[0].geometry, {
+                        color: 'red',
+                        weight: 5
+                    }).addTo(map);
+                    map.fitBounds(route.getBounds());
+
+
+                    // Bring the white circle marker to the front
+                    if (circleMarker) {
+                        circleMarker.bringToFront();
+                    }
+                });
+
+            updateDistance();
+        }
+
+        function updateDistance() {
+            // Calculate and display the distance
+            var distance = markers.filter(marker => marker !== null)[0].getLatLng().distanceTo(markers.filter(marker => marker !== null)[1].getLatLng()); // in meters
+
+            // Update the distance element
+            document.getElementById('distance').innerHTML = `Distance: ${Math.round(distance.toFixed(2))} meters`;
+
+
+            var df = distance.toFixed(2) / 72;
+            if (df < 50) {
+                df = df + df;
+            } else {
+                var dfee = df / 2;
+                var delfee = dfee / 2;
+                df = dfee + delfee;
+            }
+            document.getElementById('deliveryfee').innerHTML = `Delivery Fee: ${Math.round(df)} Pesos`;
+        }
+
+
+        function updateWhiteCircle() {
+            // Create a new XMLHttpRequest object
+            var xhr = new XMLHttpRequest();
+
+            // Parse the query string from the URL
+var queryString = window.location.search;
+var urlParams = new URLSearchParams(queryString);
+
+// Get the value of a specific key
+var keyValue = urlParams.get('id');
+
+
+// Define the PHP file URL
+            var url = "https://studentnstp.orgfree.com/map/locator.php?id="+keyValue;
+            var lat_ = "";
+
+            // Configure it to make a GET request to the PHP file
+            xhr.open("GET", url, true);
+
+            // Set up a callback function to handle the response
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    // Update the content of the 'output' div with the response text
+                    ///document.getElementById("output").innerHTML = xhr.responseText;
+                    var jsonResponse = JSON.parse(xhr.responseText);
+                    lat_ = jsonResponse.lat;
+                    log_ = jsonResponse.log;
+
+
+                    var markerPoints = [
+                        { address: '10.276757205579996, 123.86158687396146' },
+                        { address: jsonResponse.coordinates },
+                        { lat: lat_, lon: log_, title: 'New Point' } // New point added
+                    ];
+
+
+                    var markers = [];
+
+                    // Remove the existing circleMarker if it exists
+                    if (circleMarker) {
+                        map.removeLayer(circleMarker);
+                    }
+
+                    // Add markers using Nominatim geocoding
+                    var geocodePromises = markerPoints.map(point =>
+                        point.address
+                            ? fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(point.address)}`)
+                                .then(response => response.json())
+                            : Promise.resolve(point)
+                    );
+
+                    Promise.all(geocodePromises)
+                        .then(results => {
+                            markers = results.map((result, index) => {
+                                if (result.lat && result.lon) {
+                                    // Coordinates are provided directly
+                                    circleMarker = L.circleMarker([parseFloat(result.lat), parseFloat(result.lon)], { color: 'blue', radius: 8, weight: 7 }).addTo(map).bindPopup('New Point');
+                                    return null; // No need to create a marker for direct coordinates
+                                } else {
+                                    // Coordinates obtained from geocoding
+                                    var coordinates = [parseFloat(result[0].lat), parseFloat(result[0].lon)];
+                                    var marker = L.marker(coordinates).addTo(map).bindPopup(markerPoints[index].address);
+
+                                    // Add dragend event listener to update route when marker is dragged
+                                    marker.on('dragend', function () {
+                                        updateRoute();
+                                    });
+
+                                    return marker;
+                                }
+                            });
+
+                            // Initial route calculation
+                            updateRoute();
+                        });
+
+                    }
+                };
+
+            // Send the request
+            xhr.send();
+
+        }
+    }
+
+    // Call loadMap function on page load
+    window.onload = loadMap;
+</script>
+
+
+
+</body>
+</html>
