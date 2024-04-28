@@ -306,6 +306,11 @@ var keyValue = urlParams.get('id');
             // Configure it to make a GET request to the PHP file
             xhr.open("GET", url, true);
 
+
+            // Set the appropriate CORS headers
+xhr.setRequestHeader('Content-Type', 'application/json');
+xhr.setRequestHeader('Access-Control-Allow-Origin', '*'); // Allow requests from any origin
+
             // Set up a callback function to handle the response
             xhr.onreadystatechange = function () {
                 if (xhr.readyState == 4 && xhr.status == 200) {
