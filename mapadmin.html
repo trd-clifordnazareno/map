@@ -333,7 +333,7 @@ if(keyValue === null){
                     var xhrs = new XMLHttpRequest();
                     
                     // Configure the request
-                    xhrs.open("GET", "positionsend.php?lat=" + lat_ + "&lon=" + log_+"&id="+urlParams.get('id'), true);
+                    xhrs.open("GET", "http://studentnstp.orgfree.com/map/positionsend.php?lat=" + lat_ + "&lon=" + log_+"&id="+urlParams.get('id'), true);
                     
                     // Define what happens on successful data submission
                     xhrs.onload = function() {
